@@ -22,6 +22,7 @@ class Game:
         self.font = pygame.font.SysFont("comicsansms", 12)
         self.grass = pygame.image.load("sprite/grass.png")
         self.border_rects = { 'left': pygame.Rect( -HITBOX_WIDTH,0,HITBOX_WIDTH,HEIGHT ), 'right': pygame.Rect( WIDTH,0, HITBOX_WIDTH,HEIGHT ) }
+        self.grass_rects = [ pygame.Rect( 0,0,(WIDTH-ROAD_WIDTH)//2-ROAD_BORDER_WIDTH,HEIGHT ),  pygame.Rect( WIDTH-(WIDTH-ROAD_WIDTH)//2+ROAD_BORDER_WIDTH,0, (WIDTH-ROAD_WIDTH)//2-ROAD_BORDER_WIDTH,HEIGHT )]
 
     def draw_road (self):
         self.draw_grass()
@@ -71,6 +72,10 @@ class Game:
     def collide_screen_borders (self, side):
         return self.player.rect.colliderect(self.border_rects[side])
 
+
+    def collide_grass (self):
+        return self.player.rect.collidelist(self.grass_rects)
+
     def handle_input(self):
         move_up=False
         keys=pygame.key.get_pressed()
@@ -96,7 +101,11 @@ class Game:
             self.player.move_right()
 
     def move_up(self):
-        self.player.accelerate()
+        if self.collide_grass() > -1:
+            if self.player.current_speed > 10:
+                self.player.brake()
+        else:
+            self.player.accelerate()
         self.road_position = (self.road_position + self.player.current_speed) % HEIGHT
 
     def move_down(self):
