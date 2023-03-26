@@ -1,27 +1,24 @@
 import pygame
+import math
+
+from settings import *
 
 from player import Player
-
-WIDTH = 1300
-HEIGHT = 600
-
-ROAD_WIDTH = WIDTH//2
-ROAD_BORDER_WIDTH = 20
-ROAD_BORDER_HEIGHT = 100
-ROAD_DASH_WIDTH = 10
-ROAD_DASH_HEIGHT = 50
-HITBOX_WIDTH=10
+from gauge import OilGauge, SpeedGauge
 
 class Game:
 
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        self.road_position = 0
-        self.player = Player(screen=self.screen, velocity=1, max_speed=99)
         pygame.display.set_caption("Oil Race")
         self.font = pygame.font.SysFont("comicsansms", 12)
+        self.clock = pygame.time.Clock()
+        self.road_position = 0
+        self.player = Player(screen=self.screen, velocity=1, max_speed=99)
+        self.oil_gauge = OilGauge(self.screen)
+        self.speed_gauge = SpeedGauge(self.screen)
         self.grass = pygame.image.load("sprite/grass.png")
-        self.border_rects = { 'left': pygame.Rect( -HITBOX_WIDTH,0,HITBOX_WIDTH,HEIGHT ), 'right': pygame.Rect( WIDTH,0, HITBOX_WIDTH,HEIGHT ) }
+        self.border_rects = { 'left': pygame.Rect( -10,0,10,HEIGHT ), 'right': pygame.Rect( WIDTH,0, 10,HEIGHT ) }
         self.grass_rects = [ pygame.Rect( 0,0,(WIDTH-ROAD_WIDTH)//2-ROAD_BORDER_WIDTH,HEIGHT ),  pygame.Rect( WIDTH-(WIDTH-ROAD_WIDTH)//2+ROAD_BORDER_WIDTH,0, (WIDTH-ROAD_WIDTH)//2-ROAD_BORDER_WIDTH,HEIGHT )]
 
     def draw_road (self):
@@ -114,6 +111,7 @@ class Game:
 
     def run(self):
         running = True
+        start_time = pygame.time.get_ticks()
         while running:
 
             # get witch key is pressed
@@ -125,8 +123,20 @@ class Game:
             # draw player's car
             self.player.draw()
 
+            # draw gauges
+            self.oil_gauge.current_value = self.player.oil
+            self.oil_gauge.draw()
+
+            self.speed_gauge.current_value = int(self.player.instant_distance_by_second * 3.6)
+            self.speed_gauge.draw()
+
             self.draw_message((0,0,0),10,10,f"self.road_position={self.road_position}")
-            self.draw_message((0,0,0),10,20,f"self.player.current_speed={self.player.current_speed}")
+            self.draw_message((0,0,0),10,25,f"self.player.current_speed={self.player.current_speed} px")
+            self.draw_message((0,0,0),10,40,f"self.player.distance={self.player.total_distance} m")
+            self.draw_message((0,0,0),10,55,f"self.clock.get_fps={self.clock.get_fps()} fps")
+            self.draw_message((0,0,0),10,70,f"nb milliseconds={pygame.time.get_ticks() - start_time} ms")
+            self.draw_message((0,0,0),10,85,f"vitesse moyenne={self.player.total_distance / (pygame.time.get_ticks() - start_time) * 3.6 * 1000} km/h")
+            self.draw_message((0,0,0),10,100,f"vitesse instantanée={int(self.player.instant_distance_by_second * 10 * 3.6)} km/h")
 
             # update screen rendering
             pygame.display.flip()
@@ -134,6 +144,8 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+
+            self.clock.tick(FPS)
 
         pygame.quit()
 
